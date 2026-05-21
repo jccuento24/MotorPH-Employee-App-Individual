@@ -138,50 +138,154 @@ public final class MotorPHEmployeeGUI extends JFrame
         add(loginPanel);
     }
 
-    public void buildDashboard(String role) {
+    public void buildDashboard(UserAccount currentAccount) {
 
         dashboardPanel = new JPanel();
+
         dashboardPanel.setLayout(new BorderLayout());
-
-        DefaultTableModel model = new DefaultTableModel();
-
-        model.addColumn("Employee ID");
-        model.addColumn("Employee Name");
-        model.addColumn("Position");
-        model.addColumn("Salary");
-
-        for (Employee employee : FileHandler.employeeList) {
-            model.addRow(new Object[]{
-                employee.getEmployeeID(),
-                employee.getEmployeeFirstName() + " "
-                + employee.getEmployeeLastName(),
-                employee.getPosition(),
-                employee.getBasicSalary()
-            });
-        }
-
-        employeeTable = new JTable(model);
-
-        dashboardPanel.add(new JScrollPane(employeeTable),
-                BorderLayout.CENTER);
 
         JPanel topPanel = new JPanel();
 
         JLabel roleLabel = new JLabel(
-                "Logged in as: " + role
+                "Logged in as: "
+                + currentAccount.getUserRole()
         );
 
         topPanel.add(roleLabel);
+
+        logoutButton = new JButton("Logout");
+
+        logoutButton.addActionListener(this);
+
         topPanel.add(logoutButton);
 
         dashboardPanel.add(topPanel,
                 BorderLayout.NORTH);
+
+        // =================================================
+        // EMPLOYEE ACCESS
+        // =================================================
+        if (currentAccount.getUserRole().equals("Employee")) {
+
+            JPanel employeePanel = new JPanel();
+
+            employeePanel.setLayout(new GridLayout(10,
+                    1,
+                    10,
+                    10));
+
+            String username = currentAccount.getUsername();
+
+            Employee loggedEmployee = null;
+
+            for (Employee employee : FileHandler.employeeList) {
+
+                String generatedUsername
+                        = employee.getEmployeeLastName()
+                                .toLowerCase()
+                        + employee.getEmployeeID();
+
+                if (generatedUsername.equals(username)) {
+
+                    loggedEmployee = employee;
+
+                    break;
+                }
+            }
+            
+            final Employee employeeData = loggedEmployee;
+
+            JLabel employeeInfo = new JLabel(
+                    "<html>"
+                    + "<h2>Employee Information</h2>"
+                    + "Employee ID: "
+                    + loggedEmployee.getEmployeeID()
+                    + "<br>"
+                    + "Name: "
+                    + loggedEmployee.getEmployeeFirstName()
+                    + " "
+                    + loggedEmployee.getEmployeeLastName()
+                    + "<br>"
+                    + "Position: "
+                    + loggedEmployee.getPosition()
+                    + "<br>"
+                    + "Department: "
+                    + loggedEmployee.getDepartment()
+                    + "</html>"
+            );
+            
+            JButton employeeInformationButton
+                    = new JButton("View Employee Information");
+
+            JButton payCoverageButton
+                    = new JButton("Pay Coverage");
+            
+            employeeInformationButton.addActionListener(e -> {
+
+                showEmployeeInformationPage(employeeData);            
+            });
+
+            payCoverageButton.addActionListener(e -> {
+
+                showPayCoveragePage(employeeData);
+            });
+
+
+            employeePanel.add(employeeInfo);
+
+            employeePanel.add(employeeInformationButton);
+
+            employeePanel.add(payCoverageButton);
+            
+            dashboardPanel.add(employeePanel,
+                    BorderLayout.CENTER);
+        } 
+
+        // =================================================
+        // PAYROLL STAFF ACCESS
+        // ==================================================
+        
+        else {
+
+            DefaultTableModel model
+                    = new DefaultTableModel();
+
+            model.addColumn("Employee ID");
+
+            model.addColumn("Employee Name");
+
+            model.addColumn("Position");
+
+            model.addColumn("Salary");
+
+            for (Employee employee
+                    : FileHandler.employeeList) {
+
+                model.addRow(new Object[]{
+                    employee.getEmployeeID(),
+                    employee.getEmployeeFirstName()
+                    + " "
+                    + employee.getEmployeeLastName(),
+                    employee.getPosition(),
+                    employee.getBasicSalary()
+                });
+            }
+
+            employeeTable = new JTable(model);
+
+            dashboardPanel.add(
+                    new JScrollPane(employeeTable),
+                    BorderLayout.CENTER
+            );
+        }
+
         add(dashboardPanel);
 
         revalidate();
+
         repaint();
     }
-
+    
     public void createAccounts() {
 
         accounts = new UserAccount[FileHandler.employeeList.size() + 2];
@@ -260,7 +364,7 @@ public final class MotorPHEmployeeGUI extends JFrame
 
                 remove(loginPanel);
 
-                buildDashboard(account.getUserRole());
+                buildDashboard(account);
 
                 isValid = true;
                 break;
@@ -269,8 +373,260 @@ public final class MotorPHEmployeeGUI extends JFrame
 
         if (!isValid) {
 
-            JOptionPane.showMessageDialog(this,
-                    "Invalid username or password.");
+            JOptionPane.showMessageDialog(this, "Invalid username or password.");
         }
+    }
+    
+    
+    public void showPayCoveragePage(
+            Employee employee) {
+
+        JFrame payCoverageFrame
+                = new JFrame("Pay Coverage");
+
+        payCoverageFrame.setSize(600,
+                500);
+
+        payCoverageFrame.setLocationRelativeTo(null);
+
+        JPanel panel
+                = new JPanel();
+
+        panel.setLayout(new BorderLayout());
+
+        // =========================================
+        // TOP INPUT PANEL
+        // =========================================
+        JPanel inputPanel
+                = new JPanel();
+
+        inputPanel.setLayout(
+                new GridLayout(3,
+                        2,
+                        10,
+                        10)
+        );
+
+        JLabel startDateLabel
+                = new JLabel("Start Date:");
+
+        JTextField startDateField
+                = new JTextField();
+
+        JLabel endDateLabel
+                = new JLabel("End Date:");
+
+        JTextField endDateField
+                = new JTextField();
+
+        JButton generateButton
+                = new JButton("Generate Payslip");
+
+        inputPanel.add(startDateLabel);
+
+        inputPanel.add(startDateField);
+
+        inputPanel.add(endDateLabel);
+
+        inputPanel.add(endDateField);
+
+        inputPanel.add(generateButton);
+
+        // =========================================
+        // PAYSLIP AREA
+        // =========================================
+        JTextArea payslipArea
+                = new JTextArea();
+
+        payslipArea.setEditable(false);
+
+        JScrollPane scrollPane
+                = new JScrollPane(payslipArea);
+
+        // =========================================
+        // BUTTON ACTION
+        // =========================================
+        generateButton.addActionListener(e -> {
+
+            try {
+
+                String startDate
+                        = startDateField.getText();
+
+                String endDate
+                        = endDateField.getText();
+
+                if (startDate.isEmpty()
+                        || endDate.isEmpty()) {
+
+                    JOptionPane.showMessageDialog(
+                            payCoverageFrame,
+                            "Please enter all dates."
+                    );
+
+                    return;
+                }
+
+                Payroll payroll
+                        = new Payroll();
+
+                double grossSalary
+                        = payroll.computeGrossSalary(
+                                160,
+                                employee.getBasicSalary()
+                                / 160
+                        );
+
+                double deductions
+                        = payroll.computeTotalDeductions(
+                                grossSalary
+                        );
+
+                double netSalary
+                        = payroll.computeNetSalary(
+                                grossSalary,
+                                deductions
+                        );
+
+                payslipArea.setText(
+                        "========== MOTORPH PAYSLIP ==========\n\n"
+                        + "Pay Coverage\n"
+                        + startDate
+                        + " to "
+                        + endDate
+                        + "\n\n"
+                        + "Employee ID: "
+                        + employee.getEmployeeID()
+                        + "\n\n"
+                        + "Employee Name: "
+                        + employee.getEmployeeFirstName()
+                        + " "
+                        + employee.getEmployeeLastName()
+                        + "\n\n"
+                        + "Position: "
+                        + employee.getPosition()
+                        + "\n\n"
+                        + "Basic Salary: "
+                        + employee.getBasicSalary()
+                        + "\n\n"
+                        + "Gross Salary: "
+                        + grossSalary
+                        + "\n\n"
+                        + "Total Deductions: "
+                        + deductions
+                        + "\n\n"
+                        + "Net Salary: "
+                        + netSalary
+                );
+
+            } catch (Exception exception) {
+
+                JOptionPane.showMessageDialog(
+                        payCoverageFrame,
+                        "Error generating payslip."
+                );
+            }
+        });
+
+        panel.add(inputPanel,
+                BorderLayout.NORTH);
+
+        panel.add(scrollPane,
+                BorderLayout.CENTER);
+
+        payCoverageFrame.add(panel);
+
+        payCoverageFrame.setVisible(true);
+    }
+    
+    public void showEmployeeInformationPage(
+            Employee employee) {
+
+        JFrame informationFrame
+                = new JFrame("Employee Information");
+
+        informationFrame.setSize(500,
+                500);
+
+        informationFrame.setLocationRelativeTo(null);
+
+        JPanel panel
+                = new JPanel();
+
+        panel.setLayout(new GridLayout(10,
+                1,
+                10,
+                10));
+
+        JLabel title
+                = new JLabel(
+                        "Employee Information"
+                );
+
+        JLabel employeeID
+                = new JLabel(
+                        "Employee ID: "
+                        + employee.getEmployeeID()
+                );
+
+        JLabel employeeName
+                = new JLabel(
+                        "Employee Name: "
+                        + employee.getEmployeeFirstName()
+                        + " "
+                        + employee.getEmployeeLastName()
+                );
+
+        JLabel birthDate
+                = new JLabel(
+                        "Birth Date: "
+                        + employee.getBirthDate()
+                );
+
+        JLabel position
+                = new JLabel(
+                        "Position: "
+                        + employee.getPosition()
+                );
+
+        JLabel department
+                = new JLabel(
+                        "Department: "
+                        + employee.getDepartment()
+                );
+
+        JLabel salary
+                = new JLabel(
+                        "Basic Salary: "
+                        + employee.getBasicSalary()
+                );
+
+        JButton backButton
+                = new JButton("Back");
+
+        backButton.addActionListener(e -> {
+
+            informationFrame.dispose();
+        });
+
+        panel.add(title);
+
+        panel.add(employeeID);
+
+        panel.add(employeeName);
+
+        panel.add(birthDate);
+
+        panel.add(position);
+
+        panel.add(department);
+
+        panel.add(salary);
+
+        panel.add(backButton);
+
+        informationFrame.add(panel);
+
+        informationFrame.setVisible(true);
     }
 }
