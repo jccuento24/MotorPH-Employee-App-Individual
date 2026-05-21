@@ -51,3 +51,4 @@ public class AttendanceRecord {
         System.out.println("Attendance recorded successfully.");
     }
 }
+
