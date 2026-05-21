@@ -31,11 +31,15 @@ public class FileHandler {
 
             while ((line = bufferedReader.readLine()) != null) {
 
-                String[] data = line.split(",");
-                String employeeID = data[0];
-                String lastName = data[1];
-                String firstName = data[2];
-                String birthDate = data[3];
+                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                String employeeID = data[0].replace("\"", "").trim();
+
+                String lastName = data[1].replace("\"", "").trim();
+
+                String firstName = data[2].replace("\"", "").trim();
+
+                String birthDate = data[3].replace("\"", "").trim();
 
                 double basicSalary = 0;
 
@@ -45,6 +49,8 @@ public class FileHandler {
                             .replace("\"", "")
                             .replace(",", "")
                             .trim();
+                    
+                    System.out.println("Salary Loaded: " + salaryText);
 
                     if (!salaryText.equalsIgnoreCase("N/A")
                             && !salaryText.isEmpty()) {
